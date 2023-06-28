@@ -9,8 +9,7 @@ import Loader from './Loader/Loader';
 import Modal from './Modal/Modal';
 
 const API_KEY = '37930503-8d8d6a4cdb4ba6645e7575bb7';
-const BASE_URL =
-  'https://pixabay.com/api/?key=your_key&image_type=photo&orientation=horizontal&per_page=12';
+const BASE_URL = `https://pixabay.com/api/?key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`;
 
 export class App extends Component {
   state = {
@@ -20,6 +19,7 @@ export class App extends Component {
     isLoading: false,
     modalImageUrl: '',
     error: null,
+    totalPages: 0,
   };
 
   handleSearch = async (newQuery) => {
@@ -27,7 +27,10 @@ export class App extends Component {
   };
 
   handleLoadMore = () => {
-    this.setState((prevState) => ({ page: prevState.page + 1 }));
+    const { page, totalPages } = this.state;
+    if (page < totalPages) {
+      this.setState((prevState) => ({ page: prevState.page + 1 }));
+    }
   };
 
   handleImageClick = (imageUrl) => {
@@ -60,7 +63,6 @@ export class App extends Component {
     try {
       const response = await axios.get(BASE_URL, {
         params: {
-          key: API_KEY,
           q: query,
           page,
         },
@@ -72,6 +74,7 @@ export class App extends Component {
 
       this.setState((prevState) => ({
         images: [...prevState.images, ...response.data.hits],
+        totalPages: Math.ceil(response.data.totalHits / 12),
       }));
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -82,7 +85,7 @@ export class App extends Component {
   };
 
   render() {
-    const { images, isLoading, modalImageUrl, error } = this.state;
+    const { images, isLoading, modalImageUrl, error, page, totalPages } = this.state;
 
     return (
       <div className={css.container}>
@@ -96,7 +99,7 @@ export class App extends Component {
 
         {isLoading && <Loader />}
 
-        {!isLoading && images.length > 0 && (
+        {!isLoading && images.length > 0 && page < totalPages && (
           <Button onClick={this.handleLoadMore} />
         )}
 
